@@ -96,6 +96,16 @@ function conic_form!(x::PartialTraceAtom, unique_conic_forms::UniqueConicForms)
 	return get_conic_form(unique_conic_forms, x)
 end
 
+function partialtrace(x, systems::Vector, dims::Vector)
+	dims = copy(dims)
+	out = x
+	for sys in systems
+		out = partialtrace(out, sys, dims)
+		dims[sys] = 1
+	end
+	return out
+end
+
 # General function, works in Convex.jl and with normal matrices
 function partialtrace(x, sys::Integer, dims::Vector)
 	function entry(ρ, j::Integer)

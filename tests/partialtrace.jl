@@ -10,6 +10,10 @@ facts("Partial trace") do
 
     @fact partialtrace(X_ab, 2, [2; 2]) --> X_a
     @fact partialtrace(X_ab, 1, [2; 2]) --> X_b
+
+    X = rand(32, 32)
+    @fact partialtrace(X, [1; 2; 3], [4; 4; 2])[1, 1] --> roughly(trace(X))
+    @fact partialtrace(X, [2; 1; 3], [4; 4; 2])[1, 1] --> roughly(trace(X))
   end
 
   context("Convex.jl compatibility") do
