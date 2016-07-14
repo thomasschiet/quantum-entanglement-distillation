@@ -1,8 +1,6 @@
 using Convex
 using SCS
 
-TOL = 1e-3
-
 facts("Permute systems") do
   # check examples from http://www.qetlab.com/PermuteSystems
   X = reshape(collect(1:16), (4, 4))'

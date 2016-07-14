@@ -6,6 +6,8 @@ using FactCheck
 using Convex
 using SCS
 
+TOL = 1e-3
+
 include("permutesystems.jl")
 include("partialtranspose.jl")
 include("partialtrace.jl")
