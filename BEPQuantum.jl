@@ -1,7 +1,7 @@
 module BEPQuantum
 	export ⊗, ⊕, issquare
 	⊗(x, y) = kron(x, y)
-	⊕(x::Matrix, y::Matrix) = [x zeros(size(x)[1], size(y)[2]); zeros(size(y)[1], size(x)[2])]
+	⊕(x, y) = [x zeros(size(x)[1], size(y)[2]); zeros(size(y)[1], size(x)[2]) y]
 	issquare(x::AbstractArray) = size(x)[1] == size(x)[2]
 
 	include("lib/eVec.jl");
