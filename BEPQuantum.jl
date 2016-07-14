@@ -26,6 +26,7 @@ module BEPQuantum
 	include("lib/partialtrace.jl");
 	include("lib/partialtranspose.jl");
 	include("lib/permutesystems.jl");
+	include("lib/kron.jl");
 
 	include("lib/constructEpsnet.jl");
 	include("lib/purity.jl");
