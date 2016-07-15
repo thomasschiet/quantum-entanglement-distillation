@@ -9,7 +9,7 @@ The SDPs and methods to build the epsilon net are in `/lib/constructEpsnet.jl`. 
 - Parallelize code to run it on Amazon
 
 ## k-extentions
-The code for the k-extentions is currently written in MATLAB, but will be ported to Julia soon.
+To run a single extension the function `PPTprogrammeNoTwirling1Ext` is available and can be seen in `lib/k-ext.jl`. It takes about 5-10 minutes to run. 
 
 ## Purity enforcing SDPs
 

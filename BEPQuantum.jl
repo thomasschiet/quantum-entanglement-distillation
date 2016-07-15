@@ -15,6 +15,7 @@ module BEPQuantum
 
 	include("lib/Rains.jl");
 	include("lib/RainsProb.jl");
+	include("lib/k-ext.jl");
 
 	include("lib/copies.jl");
 	include("lib/isUnitary.jl");
@@ -26,6 +27,7 @@ module BEPQuantum
 	include("lib/partialtrace.jl");
 	include("lib/partialtranspose.jl");
 	include("lib/permutesystems.jl");
+	include("lib/swap.jl");
 	include("lib/kron.jl");
 
 	include("lib/constructEpsnet.jl");

@@ -64,7 +64,7 @@ end
 """
 Apply the partial tanspose to multiple sytems.
 """
-function partialtranspose(ρ::Union{AbstractArray, Convex.Variable}, systems::Vector, dim::Vector)
+function partialtranspose(ρ::Union{AbstractArray, AbstractExpr}, systems::Vector, dim::Vector)
   result = ρ
   for sys in systems
     result = partialtranspose(result, sys, dim)
@@ -81,7 +81,7 @@ will always be the second system, because it's not
 possible to leave out the system while providing
 the dimensions.
 """
-function partialtranspose(ρ::Union{AbstractArray, Convex.Variable}, sys::Integer = 2, dim::Vector = [])
+function partialtransposesystem(ρ::Union{AbstractArray, AbstractExpr}, sys::Integer = 2, dim::Vector = [])
   # do naive partial transposition
   if dim == []
     l = round(Int, size(ρ)[1])
@@ -100,9 +100,9 @@ function partialtranspose(ρ::Union{AbstractArray, Convex.Variable}, sys::Intege
   push!(perm, sys)
 
   l = dim[sys]
-  x = PermuteSystems(ρ, perm, dim = dim)
+  x = permutesystems(ρ, perm, dim = dim)
   y = partialtranspose(x, l, naive = true)
-  z = PermuteSystems(y, perm, dim = dim)
+  z = permutesystems(y, perm, dim = dim)
   return z
 end
 
@@ -113,12 +113,12 @@ of `l × l`. This is equivalent to applying the partial
 transepose to the last system if that particular system
 has dimension `l`.
 """
-function partialtranspose(ρ::Union{AbstractExpr, AbstractArray, Convex.Variable}, l_or_sys::Integer, dims::Vector = []; naive::Bool = false)
+function partialtranspose(ρ::Union{AbstractExpr, AbstractArray, Convex.Variable}, l_or_sys::Integer = 2, dims::Vector = []; naive::Bool = false)
   if naive
     return partialtransposenaive(ρ, l_or_sys)
   end
 
-  return partialtranspose(ρ, l_or_sys)
+  return partialtransposesystem(ρ, l_or_sys)
 end
 
 

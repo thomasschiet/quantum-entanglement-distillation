@@ -1,6 +1,6 @@
-export PermuteSystems
+export permutesystems
 
-function PermuteSystems(X, perm; dim = false, row_only = false, inv_perm = false, stop = false)
+function permutesystems(X, perm; dim = false, row_only = false, inv_perm = false, stop = false)
   dX = collect(size(X))
   is_vec = (minimum(dX) == 1) || (length(dX) == 1)
   num_sys = length(perm)
@@ -63,10 +63,10 @@ function PermuteSystems(X, perm; dim = false, row_only = false, inv_perm = false
   # used here reduces the problem to the pure state version of the problem in
   # another way that plays nicely with both full and sparse matrices
   dim = round(Int, dim)
-  row_perm = PermuteSystems(collect(1:dX[1]), perm, dim = dim[1, :], row_only = false, inv_perm = inv_perm, stop = false)
+  row_perm = permutesystems(collect(1:dX[1]), perm, dim = dim[1, :], row_only = false, inv_perm = inv_perm, stop = false)
   PX = X[row_perm, :]
   if ! row_only
-    col_perm = PermuteSystems(collect(1:dX[2]), perm, dim = dim[2, :], row_only = false, inv_perm = inv_perm, stop = false)
+    col_perm = permutesystems(collect(1:dX[2]), perm, dim = dim[2, :], row_only = false, inv_perm = inv_perm, stop = false)
     PX = PX[:, col_perm]
   end
   return PX
