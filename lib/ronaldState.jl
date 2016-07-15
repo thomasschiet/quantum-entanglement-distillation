@@ -13,8 +13,6 @@ function ronaldState(p)
 	v11 = e0 ⊗ e0;
 	out = p * epr*epr' + (1-p) * v11*v11';
 
-	println(out)
-
 	return out;
 
 end
