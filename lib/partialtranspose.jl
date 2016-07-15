@@ -131,7 +131,7 @@ has dimension `l`.
 """
 function partialtransposenaive(ρ::Union{AbstractExpr, AbstractArray, Convex.Variable}, l::Integer)
   # if the input is sparse, keep the output sparse as well
-  if !isa(ρ, Convex.Variable) issparse(ρ)
+  if !isa(ρ, Convex.Variable) && !isa(ρ, AbstractExpr) && issparse(ρ)
     vectorised = sparsevec(ρ)
   else
     vectorised = vec(ρ)

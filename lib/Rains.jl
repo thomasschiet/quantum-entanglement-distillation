@@ -15,7 +15,7 @@ export Rains
 using Convex
 using SCS
 
-function Rains(rho, nA::Int, nB::Int, K::Int)
+function Rains(rho, nA::Int, nB::Int, K::Int; verbose = true)
 
 	# Check whether rho is a quantum state
 	@assert isQuantumState(rho) "Rho is not a quantum state"
@@ -27,41 +27,17 @@ function Rains(rho, nA::Int, nB::Int, K::Int)
 	# define the identity matrix on the whole space
 	id = eye(d,d);
 
-	# define the variable F and the one which is going to be the
-	# partial transpose
+	# define the variable F
 	F = Semidefinite(d);
-	# FPT = Variable(d,d);
 
 	# define the objective
 	problem = maximize(trace(F * rho));
 
-	# problem.constraints += ([F in :SDP]);
-	problem.constraints += ([(id - F) in :SDP]);
+	problem.constraints += F ⪯ id;
+	problem.constraints += partialtranspose(F, 2, [nA; nB]) + id/K ⪰ 0;
+	problem.constraints += id/K - partialtranspose(F, 2, [nA; nB]) ⪰ 0;
 
-	# Shuffle the entries around
-	# for r = 0:(nA-1)
-	# for s = 0:(nA-1)
-	# 	offsetRow = r * nA;
-	# 	offsetCol = s * nA;
-	# 	for k = 1:nB
-	# 	for l = 1:nB
-	# 		p1 = offsetRow + k;
-	# 		p2 = offsetCol + l;
-	# 		q1 = offsetRow + l;
-	# 		q2 = offsetCol + k;
-	# 		problem.constraints += ([FPT[q1,q2] == F[p1,p2]]);
-	# 		problem.constraints += ([FPT[p1,p2] == F[q1,q2]]);
-	# 	end
-	# 	end
-	# end
-	# end
+	solve!(problem,SCSSolver(verbose = verbose))
 
-	problem.constraints += ([(PT(F, (nB, nB)) + id/K) in :SDP]);
-	problem.constraints += ([(id/K - PT(F, (nB, nB))) in :SDP]);
-
-	solve!(problem,SCSSolver(verbose=true))
-
-	problem.optval
-
-	return problem
+	return (problem, F)
 end
