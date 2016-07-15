@@ -20,7 +20,7 @@ export PPTprogrammeNoTwirling1Ext
  problem problem object given by Convex. Optimal value can be obtained
          by problem.optval
 """
-function PPTprogrammeNoTwirling1Ext(rho, nA, nB, n, K, delta verbose = true)
+function PPTprogrammeNoTwirling1Ext(rho, nA, nB, n, K, delta; verbose = true)
 
   # Check whether rho is a quantum state
   @assert isQuantumState(rho)
@@ -48,15 +48,14 @@ function PPTprogrammeNoTwirling1Ext(rho, nA, nB, n, K, delta verbose = true)
   dims = [2, 2^n, # Ahat A'
           2, 2^n, # B_1hat B_1'
           2, 2^n] # B_2hat B_2'
-
-  # define the objective
-  problem = maximize(nA * nB * trace(swap(epr ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * partialtrace(W, [5, 6], dims)))
-
   # Choi with first B system
-  W_AB1 = partialtrace(W, [5, 6], dims)
+  W_AB1 = partialtrace(W_AB1B2, [5, 6], dims)
 
   # Choi with second B system
-  W_AB2 = partialtrace(W, [3, 4], dims)
+  W_AB2 = partialtrace(W_AB1B2, [3, 4], dims)
+
+  # define the objective
+  problem = maximize(nA * nB * trace(swap(epr ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * W_AB1))
 
   # define constraints
   problem.constraints += [
@@ -76,7 +75,7 @@ function PPTprogrammeNoTwirling1Ext(rho, nA, nB, n, K, delta verbose = true)
   solve!(problem, SCSSolver(verbose = verbose))
 
   # Output
-  Psuccess = nA * nB * trace(swap(eye(4) ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * partialtrace(W.value, [5, 6], dims))
+  Psuccess = nA * nB * trace(swap(eye(4) ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * partialtrace(W_AB1B2.value, [5, 6], dims))
   F = problem.optval/Psuccess
   return (problem, F, Psuccess)
 end
