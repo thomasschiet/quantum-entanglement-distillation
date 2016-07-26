@@ -41,11 +41,11 @@ function RainsProb(ρ, nA, nB, K, δ_min, δ_max; verbose = false)
 	# define the objective
 	problem = maximize(nA * nB * trace(D * ρ'));
 
-	problem.constraints += (id/d - (D+E)) in :SDP)
+	problem.constraints += (id/d - (D+E)) in :SDP
 
 	# Constraints relating to the PPT Condition
-	problem.constraints += (DPT + EPT/(K+1)) in :SDP)
-	problem.constraints += (- DPT + EPT/(K-1)) in :SDP)
+	problem.constraints += (DPT + EPT/(K+1)) in :SDP
+	problem.constraints += (- DPT + EPT/(K-1)) in :SDP
 
 	# Constraint coming from the success probability
 	problem.constraints += nA * nB * trace(ρ'*(D+E)) ≤ δ_max
