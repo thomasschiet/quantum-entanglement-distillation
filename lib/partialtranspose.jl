@@ -4,7 +4,7 @@ using Convex
 # import reshape to extend it.
 import Base.reshape
 
-export partialtransposematrix, partialtranspose
+export partialtransposematrix, partialtranspose, partialtransposenaive
 
 # switch between coordinates of a matrix and its vectorised form
 vecCoordToMatrixCoord(k::Integer, n::Integer) = (1 + (k-1)%n, round(Int, 1+floor((k-1)/n)%n))
@@ -84,7 +84,7 @@ the dimensions.
 function partialtransposesystem(ρ::Union{AbstractArray, AbstractExpr}, sys::Integer = 2, dim::Vector = [])
   # do naive partial transposition
   if dim == []
-    l = round(Int, size(ρ)[1])
+    l = round(Int, sqrt(size(ρ)[1]))
     if sys == 2
       return partialtranspose(ρ, l, naive = true)
     else
