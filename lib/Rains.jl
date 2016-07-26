@@ -34,8 +34,8 @@ function Rains(rho, nA::Int, nB::Int, K::Int; verbose = true)
 	problem = maximize(trace(F * rho));
 
 	problem.constraints += F ⪯ id;
-	problem.constraints += partialtranspose(F, 2, [nA; nB]) + id/K ⪰ 0;
-	problem.constraints += id/K - partialtranspose(F, 2, [nA; nB]) ⪰ 0;
+	problem.constraints += ptranspose(F) + id/K ⪰ 0;
+	problem.constraints += id/K - ptranspose(F) ⪰ 0;
 
 	solve!(problem,SCSSolver(verbose = verbose))
 
