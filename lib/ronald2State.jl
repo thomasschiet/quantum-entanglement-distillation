@@ -10,7 +10,11 @@ function ronald2State(p, φ = 0)
 	# The EPR Pair
 	epr = (e0 ⊗ e1 + e^(im*φ) * e1 ⊗ e0 )/√2;
 
-	v00 = e0 ⊗ e1;
+	if φ == 0
+		epr = real(epr)
+	end
+
+	v00 = e0 ⊗ e0;
 
 	out = p * epr*epr' + (1-p) * v00*v00';
 
