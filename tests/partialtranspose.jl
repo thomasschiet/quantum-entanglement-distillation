@@ -36,6 +36,25 @@ facts("Partial transpose") do
     solve!(problem, SCSSolver(verbose = false))
 
     @fact problem.optval --> roughly(4, TOL)
+
+    oldopt = problem.optval
+
     @fact partialtranspose(W.value, 2) --> roughly(W.value, TOL)
+
+    W = Semidefinite(4)
+    id = eye(4)
+
+    problem = maximize(trace(W))
+    problem.constraints = [
+      W ⪯ id
+      W[2, 2] == 1
+      W == ptranspose(W)
+    ]
+
+    solve!(problem, SCSSolver(verbose = false))
+
+    @fact problem.optval --> roughly(4, TOL)
+    @fact partialtranspose(W.value, 2) --> roughly(W.value, TOL)
+    @fact partialtranspose(W.value, 2) --> roughly(oldopt, TOL)
   end
 end
