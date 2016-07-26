@@ -11,9 +11,7 @@
 # δ_max maximum allowed failure probability
 #
 # Outputs:
-# (F, p_succ) where:
-# F	fidelity
-# p_succ change of success
+# (problem, F, p_succ)
 
 using Convex
 using SCS
@@ -23,53 +21,40 @@ export RainsProb
 function RainsProb(ρ, nA, nB, K, δ_min, δ_max; verbose = false)
 
 	# Check whether ρ is a quantum state
-	if isQuantumState(ρ) == 0
-		error("The input state must be a valid quantum state.");
-		return;
-	end
+	@assert isQuantumState(ρ) "The input state must be a valid quantum state."
 
 	# Check whether dimensions match
-	(d, db) = size(ρ);
-	if (d != nA*nB)
-		error("Input state doesn't match given dimensions." , d , "≠", nA*nB);
-		return;
-	end
+	(d, db) = size(ρ)
+	@assert d == nA * nB "Input state doesn't match given dimensions." , d , "≠", nA*nB
 
 	# define the identity matrix on the whole space
 	id = eye(d)
 
 	# define the variable F and the one which is going to be the
 	# partial transpose
-	M = Semidefinite(d)
-	MPT = Semidefinite(d)
-
+	D = Semidefinite(d)
 	E = Semidefinite(d)
-	EPT = Semidefinite(d)
 
-	p_succ = nA * nB * trace(ρ'*(M+E))
+	EPT = partialtranspose(E, 2, [4; 4])
+	DPT = partialtranspose(D, 2, [4; 4])
 
 	# define the objective
-	problem = maximize(nA * nB * trace(ρ' * M))
+	problem = maximize(nA * nB * trace(D * ρ'));
 
-
-	EPT = partialtranspose(E)
-	MPT = partialtranspose(M)
-
-	problem.constraints += ([M + E ≤ id/d])
+	problem.constraints += (id/d - (D+E)) in :SDP)
 
 	# Constraints relating to the PPT Condition
-	problem.constraints += ([MPT + EPT/(K+1) ≥ 0])
-	problem.constraints += ([- MPT + EPT/(K-1) ≥ 0])
+	problem.constraints += (DPT + EPT/(K+1)) in :SDP)
+	problem.constraints += (- DPT + EPT/(K-1)) in :SDP)
 
 	# Constraint coming from the success probability
-	problem.constraints += ([p_succ <=  δ_max])
-	problem.constraints += ([p_succ >=  δ_min])
+	problem.constraints += nA * nB * trace(ρ'*(D+E)) ≤ δ_max
+	problem.constraints += nA * nB * trace(ρ'*(D+E)) ≥ δ_min
 
-	solve!(problem, SCSSolver(verbose = verbose));
+	solve!(problem, SCSSolver(verbose = verbose))
 
-	p_succ = nA * nB * trace(ρ'*(M.value + E.value))
-
-	F = problem.optval / p_succ;
+	p_succ = nA * nB * trace(ρ'*(D.value + E.value))
+	F = problem.optval / p_succ
 
 	return (problem, F, p_succ)
 end
