@@ -24,13 +24,36 @@ function purity(ρ::AbstractArray)
   t_B = 1
 
   # instantiate direction matrices
-  W_Abar = eye(nA)
-  W_Bbar = eye(nB)
+  W_Abar = zeros(nA, nA)
+  W_Bbar = zeros(nB, nB)
 
-  # TODO: loop this properly
-  for i = 1:10
-    (C_AbarBbar, ) = findChoi(ρ, W_Abar, W_Bbar, t_A, t_B)
-    (W_Abar, W_Bbar, t_A, t_B) = findWs(C_AbarBbar, )
+  # do iterations until purity is reached or 100 iterations were done
+  for i = 1:100
+    println("Starting iteration ", i)
+    @time (C_AbarBbar, problem, F, p_succ) = findChoi(ρ, W_Abar, W_Bbar, t_A, t_B)
+
+    # sometimes Convex.jl fails.
+    # try again in that case
+    j = 1
+    while C_AbarBbar == zeros((1024, 1024))
+      println(" trying again ", j, "...")
+      j += 1
+      @time (C_AbarBbar, problem, F, p_succ) = findChoi(ρ, W_Abar, W_Bbar, t_A, t_B)
+    end
+
+    λ = eigvals(C_AbarBbar)
+    λ = -sort(-real(λ))
+    println(" λs = ", round(λ[1:10], 2))
+    println(" F = ", F)
+    println(" p_succ = ", p_succ)
+
+    # check with some tolerance if the state is pure
+    # if so, return the found Choi state
+    if λ[2] ≤ 1e-3
+      return C_AbarBbar
+    end
+
+    @time (W_Abar, W_Bbar, t_A, t_B) = findWs(C_AbarBbar, )
   end
 
   return C_AbarBbar
@@ -46,6 +69,8 @@ function findChoi(ρ::AbstractArray, W_Abar::AbstractArray, W_Bbar::AbstractArra
   @assert 0 ≤ t_A ≤ 1
   @assert 0 ≤ t_B ≤ 1
 
+  δ = .5
+
   nAhat = 2
   nF_A = 2
   nAprime = 4
@@ -59,19 +84,52 @@ function findChoi(ρ::AbstractArray, W_Abar::AbstractArray, W_Bbar::AbstractArra
   nB = nBhat * nF_B * nBprime * nE_B
   nC = nA * nB
 
-  C_AbarBbar = Semidefinite(nC)
-  C_Abar = partialtrace(C_AB, 2, [nA, nB])
-  C_Bbar = partialtrace(C_AB, 1, [nA, nB])
+  e0 = eVec(2, 1)
+  e1 = eVec(2, 2)
 
-  problem = maximize(nA*nB*trace(ρ' * C_AbarBbar))
+  e11 = e1 ⊗ e1
+  e11 = e11 * e11'
+
+  epr = e0 ⊗ e0 + e1 ⊗ e1
+  epr = epr * epr'
+
+  e1 = e1 * e1'
+
+  C_AbarBbar = Semidefinite(nC)
+  C_Abar = partialtrace(C_AbarBbar, 2, [nA; nB])
+  C_Bbar = partialtrace(C_AbarBbar, 1, [nA; nB])
+
+  C_AprimeBprime = partialtrace(C_AbarBbar, [1; 2; 4; 5; 6; 8] , [nAhat; nF_A; nAprime; nE_A; nBhat; nF_B; nBprime; nE_B])
+
+  problem = maximize(trace(epr ⊗ e11 ⊗ eye(nE_A * nE_B) ⊗ ρ' * C_AbarBbar))
 
   # constraints from purity
-  problem.constraints += ([(trace(C_Abar * W_Abar)) ≤ t_A])
-  problem.constraints += ([(trace(C_Bbar * W_Bbar)) ≤ t_B])
+  problem.constraints += [trace(C_Abar * W_Abar) ≤ t_A]
+  problem.constraints += [trace(C_Abar * W_Bbar) ≤ t_B]
+
+  # constraints for Choi state
+  problem.constraints += [C_AprimeBprime == eye(16)/16]
+  problem.constraints += [trace(C_AbarBbar) == 1]
+
+  # PPT constraint
+  problem.constraints += [ptranspose(C_AbarBbar) == C_AbarBbar]
+
+  # probability constraints
+  problem.constraints += [trace(eye(nAhat) ⊗ e1 ⊗ partialtrace(ρ, 2, [4; 4]) ⊗ eye(nE_A) ⊗ eye(nBhat) ⊗ e1 ⊗ partialtrace(ρ, 1, [4; 4]) ⊗ eye(nE_B) * C_AbarBbar) ≤ δ]
+  problem.constraints += [trace(eye(nAhat) ⊗ e1 ⊗ partialtrace(ρ, 2, [4; 4]) ⊗ eye(nE_A) ⊗ eye(nBhat) ⊗ e1 ⊗ partialtrace(ρ, 1, [4; 4]) ⊗ eye(nE_B) * C_AbarBbar) ≥ 0]
+
+  # constraints from purity
+  problem.constraints += [trace(C_Abar * W_Abar) ≤ t_A]
+  problem.constraints += [trace(C_Abar * W_Bbar) ≤ t_B]
 
   solve!(problem, SCSSolver(verbose = verbose))
 
-  return (C_AbarBbart.value, )
+  problem.optval *= nA * nB
+
+  p_succ = trace(eye(nAhat) ⊗ e1 ⊗ partialtrace(ρ, 2, [4; 4]) ⊗ eye(nE_A) ⊗ eye(nBhat) ⊗ e1 ⊗ partialtrace(ρ, 1, [4; 4]) ⊗ eye(nE_B) * C_AbarBbar.value)
+  F = problem.optval / p_succ
+
+  return (C_AbarBbar.value, problem, F, p_succ)
 end
 
 """
@@ -94,11 +152,12 @@ function findW(C_opt::AbstractArray, system::Union{AbstractString, Int}; verbose
   W_Xbar = Variable(size(C_X))
 
   problem = minimize(trace(C_X' * W_Xbar))
-  problem.constraints += ([0 ⪯ W_Xbar ⪯ eye(size(W_Xbar))])
-  problem.constrains += ([trace(W_Xbar) = size(C_X)[1] - 1])
+  problem.constraints += ([0 ⪯ W_Xbar])
+  problem.constraints += ([W_Xbar ⪯ eye(size(W_Xbar)...)])
+  problem.constraints += ([trace(W_Xbar) == size(C_X)[1] - 1])
 
-  solve!(SCSSolver(verbose = verbose))
-  return problem.optval
+  solve!(problem, SCSSolver(verbose = verbose))
+  return (W_Xbar.value, problem.optval)
 end
 
 """
