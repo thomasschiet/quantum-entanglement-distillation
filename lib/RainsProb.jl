@@ -35,8 +35,8 @@ function RainsProb(ρ, nA, nB, K, δ_min, δ_max; verbose = false)
 	D = Semidefinite(d)
 	E = Semidefinite(d)
 
-	EPT = partialtranspose(E, 2, [4; 4])
-	DPT = partialtranspose(D, 2, [4; 4])
+	EPT = ptranspose(E)
+	DPT = ptranspose(D)
 
 	# define the objective
 	problem = maximize(nA * nB * trace(D * ρ'));
