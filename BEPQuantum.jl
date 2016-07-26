@@ -34,5 +34,5 @@ module BEPQuantum
 	include("lib/constructEpsnet.jl");
 	include("lib/purity.jl");
 
-	include("lib/colors.jl");
+	# include("lib/colors.jl");
 end
