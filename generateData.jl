@@ -1,25 +1,24 @@
+include("BEPQuantum.jl")
+using BEPQuantum
 using SQLite
+using Convex
 
 db = SQLite.DB("data.sqlite")
 
 
-using Convex
-include("quantum.jl")
-include("RainsProbWithPT.jl")
-
-ps = collect(0.4:0.1:1)
-δs = collect(0.05:0.05:0.95)
+ps = collect(0.4)
+δs = collect(0.3)
 # ϵ = 0.05
 ϵ = false
 
 entries = length(ps)*length(δs)
-stateName = "Rerun Double Werner"
+stateName = "2ext Double Werner"
 n_copies = 2
 
 times = []
 
 firstRun = true
-maxRetries = 2
+maxRetries = 20
 retries = 0
 foundNaN = false
 
@@ -36,7 +35,7 @@ end
 function hasBeenComputed(δ_max, δ_min, stateName, p)
   q = string("SELECT COUNT(*) FROM `RainsProb` WHERE `delta_max` = ", δ_max ," AND `delta_min` = ", δ_min ," AND p = ", p ," AND `state` = '", stateName, "'")
   result = SQLite.query(db, q)
-  count = result.data[1][1].value
+  count = result[1][1].value
 
   return count > 0
 end
@@ -79,10 +78,13 @@ while firstRun == true || (foundNaN == true && retries < maxRetries)
       # only compute data if no entry is available
       if !computed
         x = generateState(p, n_copies)
-      	state = sortAB(x, 2, n_copies);
+      	# state = sortAB(x, 2, n_copies);
+      	state = x;
         println("computing (δ_max, δ_min, p, state) = (", δ_max, ", ", δ_min, ", ", p, ", ", stateName, ")")
 
-        (F, p_succ) = RainsProb(state, 2^n_copies, 2^n_copies, 2, δ_min, δ_max, !firstRun)
+        # (problem, F, p_succ) = RainsProb(state, 2^n_copies, 2^n_copies, 2, δ_min, δ_max)
+        # rho, nA, nB, n, K, delta;
+        (problem, F, p_succ) = PPTprogrammeNoTwirling2Ext(state, 2^n_copies, 2^n_copies, 2, 2, δ_max)
         eprF = eprFidelity(generateState(p, 1));
 
         println("found (F, p_succ) = " , (F, p_succ))
