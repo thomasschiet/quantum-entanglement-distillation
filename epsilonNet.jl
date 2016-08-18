@@ -157,13 +157,13 @@ println(fidelityOfChoistate(C_1B, C_1A, ρ))
 println(fidelityOfChoistate(C_1A, C_1A, ρ))
 println(fidelityOfChoistate(C_1B, C_1B, ρ))
 
-fidelityOfChoistate(C_1A::Convex.Variable, C_1B::Convex.Variable, ρ::Union{Matrix, SparseMatrixCSC}) = fidelityOfChoistate(C_1A.value, C_1B.value, ρ)
-function fidelityOfChoistate(C_1A::Union{Matrix, SparseMatrixCSC}, C_1B::Union{Matrix, SparseMatrixCSC}, ρ::Union{Matrix, SparseMatrixCSC})
+fidelityOfChoistate(C_1A::Convex.Variable, C_1B::Convex.Variable, ρ::AbstractMatrix) = fidelityOfChoistate(C_1A.value, C_1B.value, ρ)
+function fidelityOfChoistate(C_1A::AbstractMatrix, C_1B::AbstractMatrix, ρ::AbstractMatrix)
   e0 = eVec(2, 1)
   e1 = eVec(2, 2)
 
   epr = (e0 ⊗ e0 + e1 ⊗ e1)
   epr = epr * epr'
 
-  return trace((epr ⊗ ρ') * (C_1A⊗C_1B))
+  return trace((epr ⊗ ρ') * (C_1A ⊗ C_1B))
 end

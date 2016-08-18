@@ -7,12 +7,6 @@
 #
 export copies
 
-function copies(ρ,n)
-
-	out = copy(ρ);
-	for k=1:(n-1)
-		out = kron(out,ρ);
-	end
-
-	return out;
+function copies(ρ, n)
+	return reduce(⊗, repeated(ρ, n))
 end

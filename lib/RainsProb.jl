@@ -39,7 +39,7 @@ function RainsProb(ρ, nA, nB, K, δ_min, δ_max; verbose = false)
 	DPT = ptranspose(D)
 
 	# define the objective
-	problem = maximize(nA * nB * trace(D * ρ'));
+	problem = maximize(trace(nA * nB * D * ρ'));
 
 	problem.constraints += (id/d - (D+E)) in :SDP
 
@@ -51,10 +51,10 @@ function RainsProb(ρ, nA, nB, K, δ_min, δ_max; verbose = false)
 	problem.constraints += nA * nB * trace(ρ'*(D+E)) ≤ δ_max
 	problem.constraints += nA * nB * trace(ρ'*(D+E)) ≥ δ_min
 
-	solve!(problem, SCSSolver(verbose = verbose))
+	solve!(problem, SCSSolver(verbose = verbose, eps = 1e-3))
 
 	p_succ = nA * nB * trace(ρ'*(D.value + E.value))
 	F = problem.optval / p_succ
 
-	return (problem, F, p_succ)
+	return (problem, F, p_succ, D.value, E.value)
 end

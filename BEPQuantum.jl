@@ -15,6 +15,7 @@ module BEPQuantum
 
 	include("lib/Rains.jl");
 	include("lib/RainsProb.jl");
+	include("lib/RainsProbWithReduction.jl");
 	include("lib/k-ext.jl");
 
 	include("lib/copies.jl");
@@ -33,6 +34,8 @@ module BEPQuantum
 
 	include("lib/constructEpsnet.jl");
 	include("lib/purity.jl");
+
+	include("lib/protocols.jl");
 
 	# include("lib/colors.jl");
 end
