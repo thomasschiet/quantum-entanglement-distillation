@@ -10,7 +10,6 @@ export PPTprogrammeNoTwirling1ExtPermSymOnlySym
  Implements the Rains bound for distillable entanglement
  with an allowed failure probability (which in turn may give higher fidelity)
  and with 1-extension
-
  Inputs:
  rho quantum state
  nA  dimension Alice
@@ -18,12 +17,11 @@ export PPTprogrammeNoTwirling1ExtPermSymOnlySym
  K   output dimension
  δ   maximum allowed failure probability
  n   number of input copies
-
  Outputs:
  problem problem object given by Convex. Optimal value can be obtained
          by problem.optval
 """
-function PPTprogrammeNoTwirling1Ext(rho, nA, nB, n, K, δ; verbose = true)
+function PPTprogrammeNoTwirling1Ext(rho, nA, nB, n, K, δ; verbose = true, eps = 1e-4)
 
   # Check whether rho is a quantum state
   @assert isQuantumState(rho)
@@ -41,7 +39,7 @@ function PPTprogrammeNoTwirling1Ext(rho, nA, nB, n, K, δ; verbose = true)
   end
 
   # define the variables W
-  W_AB1B2 = Semidefinite(2^(3 * (n + 1)))
+  W_A1A2B = Semidefinite(2^(3 * (n + 1)))
 
   # Define the EPR pair:
   epr = (eVec(2, 1) ⊗ eVec(2, 1) + eVec(2, 2) ⊗ eVec(2, 2))/√2
@@ -51,39 +49,39 @@ function PPTprogrammeNoTwirling1Ext(rho, nA, nB, n, K, δ; verbose = true)
   dims = [2, 2^n, # Ahat A'
           2, 2^n, # B_1hat B_1'
           2, 2^n] # B_2hat B_2'
-  # Choi with first B system
-  W_AB1 = partialtrace(W_AB1B2, [5, 6], dims)
+  # Choi with first A system
+  W_A1B = partialtrace(W_A1A2B, [3, 4], dims)
 
-  # Choi with second B system
-  W_AB2 = partialtrace(W_AB1B2, [3, 4], dims)
+  # Choi with second A system
+  W_A2B = partialtrace(W_A1A2B, [1, 2], dims)
 
   # define the objective
-  problem = maximize(nA * nB * trace(swap(epr ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * W_AB1))
+  problem = maximize(nA * nB * trace(swap(epr ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * W_A1B))
 
   # define constraints
   problem.constraints += [
-    eye(d)/d - partialtrace(W_AB1 , [1, 3], [2, 2^n, 2, 2^n]) ⪰ 0
+    eye(d)/d - partialtrace(W_A1B , [1, 3], [2, 2^n, 2, 2^n]) ⪰ 0
 
     # constrain probability of success
-    nA * nB * trace(swap(eye(4) ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * W_AB1) ≤ δ
-    nA * nB * trace(swap(eye(4) ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * W_AB1) ≥ 0
+    nA * nB * trace(swap(eye(4) ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * W_A1B) ≤ δ
+    nA * nB * trace(swap(eye(4) ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * W_A1B) ≥ 0
 
-    ptranspose(W_AB1) ⪰ 0
+    ptranspose(W_A1B) ⪰ 0
 
     # Choi should be equal if we trace out one of the extensions
-    W_AB1 == W_AB2
+    W_A1B == W_A2B
   ]
 
   # Maximize P
-  solve!(problem, SCSSolver(verbose = verbose, eps = 1e-3))
+  solve!(problem, SCSSolver(verbose = verbose, eps = eps))
 
   # Output
-  Psuccess = nA * nB * trace(swap(eye(4) ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * partialtrace(W_AB1B2.value, [5, 6], dims))
+  Psuccess = nA * nB * trace(swap(eye(4) ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * partialtrace(W_A1A2B.value, [5, 6], dims))
   F = problem.optval/Psuccess
   return (problem, F, Psuccess)
 end
 
-function PPTprogrammeNoTwirling2Ext(rho, nA, nB, n, K, δ; verbose = true)
+function PPTprogrammeNoTwirling2Ext(rho, nA, nB, n, K, δ; verbose = true, eps = 1e-4)
 
   # Check whether rho is a quantum state
   @assert isQuantumState(rho)
@@ -139,7 +137,7 @@ function PPTprogrammeNoTwirling2Ext(rho, nA, nB, n, K, δ; verbose = true)
   ]
 
   # Maximize P
-  solve!(problem, SCSSolver(verbose = verbose))
+  solve!(problem, SCSSolver(verbose = verbose, eps = eps))
 
   # Output
   Psuccess = nA * nB * trace(swap(eye(4) ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * partialtrace(W_AB1B2B3.value, [5, 6, 7, 8], dims))
@@ -147,7 +145,7 @@ function PPTprogrammeNoTwirling2Ext(rho, nA, nB, n, K, δ; verbose = true)
   return (problem, F, Psuccess)
 end
 
-function PPTprogrammeNoTwirling1ExtPermSymOnlySym(rho, nA, nB, n, K, δ; verbose = true)
+function PPTprogrammeNoTwirling1ExtPermSymOnlySym(rho, nA, nB, n, K, δ; verbose = true, eps = 1e-4)
 
   # Check whether rho is a quantum state
   @assert isQuantumState(rho)
@@ -179,47 +177,46 @@ function PPTprogrammeNoTwirling1ExtPermSymOnlySym(rho, nA, nB, n, K, δ; verbose
           2, 2^n, # B_1hat B_1'
           2, 2^n] # B_2hat B_2'
 
-  W_AB1B2 = Pcb * (Ws ⊕ Wa) * Pcb'
+  W_A1A2B = Pcb * (Ws ⊕ Wa) * Pcb'
 
-  # Choi with first B system
-  W_AB1 = partialtrace(W_AB1B2, [5, 6], dims)
+  # Choi with first A system
+  W_A1B = partialtrace(W_A1A2B, [3, 4], dims)
 
-  # Choi with second B system
-  W_AB2 = partialtrace(W_AB1B2, [3, 4], dims)
+  # Choi with second A system
+  W_A2B = partialtrace(W_A1A2B, [1, 2], dims)
 
   # define the objective
   # problem = maximize(nA * nB * trace(swap(epr ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * W_AB1))
-  X =  Pcb' * nA * nB *(swap(epr ⊗ rhoSorted', [2, 3], dim = [2, 2, 2^n, 2^n]) ⊗ eye(2 * 2^n)) * Pcb
+  X =  Pcb' * nA * nB *(eye(2 * 2^n) ⊗ swap(epr ⊗ rhoSorted', [2, 3], dim = [2, 2, 2^n, 2^n])) * Pcb
   problem = maximize(trace(X[1:288, 1:288] * Ws))
 
   # 5/0.6 = 4.12 / p
   #
 
-  Y = Pcb' * nA * nB * (swap(eye(4) ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) ⊗ eye(2 * 2^n)) * Pcb
+  Y = Pcb' * nA * nB * (eye(2 * 2^n) ⊗ swap(eye(4) ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n])) * Pcb
   p_succ = trace(Y[1:288, 1:288] * Ws)
 
   # define constraints
   problem.constraints += [
-    eye(d)/d - partialtrace(W_AB1 , [1, 3], [2, 2^n, 2, 2^n]) ⪰ 0
+    eye(d)/d - partialtrace(W_A2B , [1, 3], [2, 2^n, 2, 2^n]) ⪰ 0
 
     # constrain probability of success
     p_succ ≤ δ
     p_succ ≥ 0
 
-    ptranspose(W_AB1) ⪰ 0
+    ptranspose(W_A2B) ⪰ 0
   ]
 
   # Maximize P
-  solve!(problem, SCSSolver(verbose = verbose, eps = 1e-4))
+  solve!(problem, SCSSolver(verbose = verbose, eps = eps))
 
   # Output
-  println(trace(Y[1:288, 1:288] * Ws.value))
-  Psuccess = nA * nB * trace(swap(eye(4) ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * partialtrace(Pcb * (Ws.value ⊕ Wa) * Pcb', [5, 6], dims))
+  Psuccess = nA * nB * trace(swap(eye(4) ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * partialtrace(Pcb * (Ws.value ⊕ Wa) * Pcb', [1, 2], dims))
   F = problem.optval/Psuccess
   return (problem, F, Psuccess)
 end
 
-function PPTprogrammeNoTwirling1ExtPermSym(rho, nA, nB, n, K, δ; verbose = true)
+function PPTprogrammeNoTwirling1ExtPermSym(rho, nA, nB, n, K, δ; verbose = true, eps = 1e-4)
 
   # Check whether rho is a quantum state
   @assert isQuantumState(rho)
@@ -251,36 +248,36 @@ function PPTprogrammeNoTwirling1ExtPermSym(rho, nA, nB, n, K, δ; verbose = true
           2, 2^n, # B_1hat B_1'
           2, 2^n] # B_2hat B_2'
 
-  W_AB1B2 = Pcb * (Ws ⊕ Wa) * Pcb'
+  W_A1A2B = Pcb * (Ws ⊕ Wa) * Pcb'
 
-  # Choi with first B system
-  W_AB1 = partialtrace(W_AB1B2, [5, 6], dims)
+  # Choi with first A system
+  W_A1B = partialtrace(W_A1A2B, [3, 4], dims)
 
-  # Choi with second B system
-  W_AB2 = partialtrace(W_AB1B2, [3, 4], dims)
+  # Choi with second A system
+  W_A2B = partialtrace(W_A1A2B, [1, 2], dims)
 
   # define the objective
-  problem = maximize(nA * nB * trace(swap(epr ⊗ rhoSorted', [2, 3], dim = [2, 2, 2^n, 2^n]) * W_AB1))
+  problem = maximize(nA * nB * trace(swap(epr ⊗ rhoSorted', [2, 3], dim = [2, 2, 2^n, 2^n]) * W_A1B))
 
   # define constraints
   problem.constraints += [
-    eye(d)/d - partialtrace(W_AB1 , [1, 3], [2, 2^n, 2, 2^n]) ⪰ 0
+    eye(d)/d - partialtrace(W_A1B , [1, 3], [2, 2^n, 2, 2^n]) ⪰ 0
 
     # constrain probability of success
-    nA * nB * trace(swap(eye(4) ⊗ rhoSorted', [2, 3], dim = [2, 2, 2^n, 2^n]) * W_AB1) ≤ δ
-    nA * nB * trace(swap(eye(4) ⊗ rhoSorted', [2, 3], dim = [2, 2, 2^n, 2^n]) * W_AB1) ≥ 0
+    nA * nB * trace(swap(eye(4) ⊗ rhoSorted', [2, 3], dim = [2, 2, 2^n, 2^n]) * W_A1B) ≤ δ
+    nA * nB * trace(swap(eye(4) ⊗ rhoSorted', [2, 3], dim = [2, 2, 2^n, 2^n]) * W_A1B) ≥ 0
 
-    ptranspose(W_AB1) ⪰ 0
+    ptranspose(W_A1B) ⪰ 0
 
     # Choi should be equal if we trace out one of the extensions
     # W_AB1 == W_AB2
   ]
 
   # Maximize P
-  solve!(problem, SCSSolver(verbose = verbose, eps = 1e-3))
+  solve!(problem, SCSSolver(verbose = verbose, eps = eps))
 
   # Output
-  Psuccess = nA * nB * trace(swap(eye(4) ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * partialtrace(Pcb * (Ws.value ⊕ Wa.value) * Pcb', [5, 6], dims))
+  Psuccess = nA * nB * trace(swap(eye(4) ⊗ transpose(rhoSorted), [2, 3], dim = [2, 2, 2^n, 2^n]) * partialtrace(Pcb * (Ws.value ⊕ Wa.value) * Pcb', [3, 4], dims))
   F = problem.optval/Psuccess
   return (problem, F, Psuccess, Wa)
 end
@@ -319,7 +316,7 @@ function getPcb()
   Pcb = spzeros(512, 512)
   for i = 1:64
     for j = 1:8
-      Pcb[:, 64 * (j - 1) + i] = kron(v[j], u[i])
+      Pcb[:, 8 * (i - 1) + j] = kron(u[i], v[j] )
     end
   end
 
