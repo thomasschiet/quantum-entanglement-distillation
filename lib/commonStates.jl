@@ -1,11 +1,12 @@
 #
 # Defines some commonly used states in quantum information
 #
-export wernerState, ronaldState, ronald2State, epr
+export wernerState, ronaldState, ronald2State, epr, ronald2StateCorrPhase
 
 include("wernerState.jl")
 include("ronaldState.jl")
 include("ronald2State.jl")
+include("ronald2StateCorrPhase.jl")
 include("ronaldStateQutrit.jl")
 include("eVec.jl")
 
