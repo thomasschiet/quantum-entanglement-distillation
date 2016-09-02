@@ -1,5 +1,6 @@
 export bennett
 export deutsch
+export epl
 
 import Base.convert
 convert(::Type{Float64}, x::Array{Float64,1}) = x[1]
@@ -33,6 +34,9 @@ function toBellBasis(ρ::AbstractMatrix)
 end
 
 function deutsch(ρ::AbstractMatrix)
+  if fidelity(rot(ρ)) > fidelity(ρ)
+    ρ = rot(ρ)
+  end
   M = toBellBasis(ρ)
   p = (M[1, 1] + M[4, 4])^2 + (M[2, 2] + M[3, 3])^2
   F = (M[1, 1]^2 + M[4, 4]^2)/p
@@ -93,4 +97,8 @@ function rot(ρ::AbstractMatrix)
   Z = [1 0; 0 -1]
   id = eye(2)
   return (id ⊗ X) * ρ * (id ⊗ X)'
+end
+
+function epl(p::Number)
+  return (1, 0.5*p^2)
 end

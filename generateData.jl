@@ -6,13 +6,13 @@ using Convex
 db = SQLite.DB("data.sqlite")
 
 
-ps = collect(0.4)
-δs = collect(0.3)
+ps = collect(0.1:0.1:0.9)
+δs = collect(0.1:0.1:0.9)
 # ϵ = 0.05
 ϵ = false
 
 entries = length(ps)*length(δs)
-stateName = "2ext Double Werner"
+stateName = "1ext Double Ronald Only Sym"
 n_copies = 2
 
 times = []
@@ -23,7 +23,7 @@ retries = 0
 foundNaN = false
 
 function generateState(parameter, n_copies)
-  return copies(wernerState(parameter),  n_copies)
+  return copies(ronaldState(parameter),  n_copies)
 end
 
 function saveData(F, p_succ, δ_max, δ_min, stateName, p, eprF)
@@ -84,7 +84,7 @@ while firstRun == true || (foundNaN == true && retries < maxRetries)
 
         # (problem, F, p_succ) = RainsProb(state, 2^n_copies, 2^n_copies, 2, δ_min, δ_max)
         # rho, nA, nB, n, K, delta;
-        (problem, F, p_succ) = PPTprogrammeNoTwirling2Ext(state, 2^n_copies, 2^n_copies, 2, 2, δ_max)
+        (problem, F, p_succ) = PPTprogrammeNoTwirling1ExtPermSymOnlySym(state, 2^n_copies, 2^n_copies, 2, 2, δ_max, verbose = true, eps = 1e-4)
         eprF = eprFidelity(generateState(p, 1));
 
         println("found (F, p_succ) = " , (F, p_succ))

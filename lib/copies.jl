@@ -7,6 +7,10 @@
 #
 export copies
 
-function copies(ρ, n)
+function copies(ρ::AbstractMatrix, n::Int)
 	return reduce(⊗, repeated(ρ, n))
+end
+
+function copies(ρ::AbstractMatrix, n::Float64)
+	return copies(ρ, convert(Int, n))
 end

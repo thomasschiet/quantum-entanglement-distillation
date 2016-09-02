@@ -18,7 +18,10 @@ using SCS
 
 export RainsProb
 
-function RainsProb(ρ, nA, nB, K, δ_min, δ_max; verbose = false)
+function RainsProb(ρ::AbstractMatrix, nA::Int, nB::Int, n::Int, K::Int, δ_min::Number, δ_max::Number; verbose::Bool = false, eps::Number = 1e-4)
+
+	# copy ρ n times
+	ρ = copies(ρ, n)
 
 	# Check whether ρ is a quantum state
 	@assert isQuantumState(ρ) "The input state must be a valid quantum state."
@@ -30,6 +33,14 @@ function RainsProb(ρ, nA, nB, K, δ_min, δ_max; verbose = false)
 	# define the identity matrix on the whole space
 	id = eye(d)
 
+  #sort all the entries, such that all the systems on A are first and all
+  #the systems on B are second
+  if n > 1
+    rhoSorted = sortAB(ρ, 2, n)
+  else
+    rhoSorted = ρ
+  end
+
 	# define the variable F and the one which is going to be the
 	# partial transpose
 	D = Semidefinite(d)
@@ -39,8 +50,7 @@ function RainsProb(ρ, nA, nB, K, δ_min, δ_max; verbose = false)
 	DPT = ptranspose(D)
 
 	# define the objective
-	problem = maximize(trace(nA * nB * D * ρ'));
-
+	problem = maximize(trace(nA * nB * D * rhoSorted'));
 	problem.constraints += (id/d - (D+E)) in :SDP
 
 	# Constraints relating to the PPT Condition
@@ -48,12 +58,11 @@ function RainsProb(ρ, nA, nB, K, δ_min, δ_max; verbose = false)
 	problem.constraints += (- DPT + EPT/(K-1)) in :SDP
 
 	# Constraint coming from the success probability
-	problem.constraints += nA * nB * trace(ρ'*(D+E)) ≤ δ_max
-	problem.constraints += nA * nB * trace(ρ'*(D+E)) ≥ δ_min
+	problem.constraints += nA * nB * trace(rhoSorted'*(D+E)) ≤ δ_max
+	problem.constraints += nA * nB * trace(rhoSorted'*(D+E)) ≥ δ_min
 
-	solve!(problem, SCSSolver(verbose = verbose, eps = 1e-3))
-
-	p_succ = nA * nB * trace(ρ'*(D.value + E.value))
+	solve!(problem, SCSSolver(verbose = verbose, eps = eps))
+	p_succ = nA * nB * trace(rhoSorted'*(D.value + E.value))
 	F = problem.optval / p_succ
 
 	return (problem, F, p_succ, D.value, E.value)

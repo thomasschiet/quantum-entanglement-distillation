@@ -23,7 +23,7 @@ export RainsProbWithReduction
 function RainsProbWithReduction(ρ, nA, nB, K, δ_min, δ_max; verbose = false)
 
 	# Check whether ρ is a quantum state
-	@assert isQuantumState(ρ) "The input state must be a valid quantum state."
+	# @assert isQuantumState(ρ) "The input state must be a valid quantum state."
 
 	# Check whether dimensions match
 	(d, db) = size(ρ)
