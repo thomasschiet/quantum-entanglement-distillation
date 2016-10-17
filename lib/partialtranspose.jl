@@ -108,7 +108,7 @@ end
 
 """
 Apply partial transpose on systems if naive is false.
-Otherwise do the naive partial transepose in blocks
+Otherwise do the naive partial transpose in blocks
 of `l × l`. This is equivalent to applying the partial
 transepose to the last system if that particular system
 has dimension `l`.
@@ -118,7 +118,7 @@ function partialtranspose(ρ::Union{AbstractExpr, AbstractArray, Convex.Variable
     return partialtransposenaive(ρ, l_or_sys)
   end
 
-  return partialtransposesystem(ρ, l_or_sys)
+  return partialtransposesystem(ρ, l_or_sys, dims)
 end
 
 
